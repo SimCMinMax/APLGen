@@ -186,21 +186,42 @@ iterations=%s
 
     return dps_values
 
-def merge(chromosomes):
-    def majority(index):
-        genes = [c[index] for c in chromosomes]
+
+
+## Selection
+def tournament_select(population, k):
+    best = None
+    for i in range(k):
+        individual = random.choice(population)
+        if not best or fitness(individual) > fitness(best):
+            best = individual
+    return best
+
+
+
+
+
+## Crossover Operations
+
+def uniform_crossover(parents):
+    # Select a gene uniformly at random from each parent.
+    chromo_len = len(parents[0])
+    return "".join([random.choice(parents)[i] for i in range(chromo_len)])
+
+def occurence_vote_crossover(parents):
+
+    def majority(index, parents):
+        genes = [c[index] for c in parents]
         return max(set(genes), key=genes.count)
+
     # Takes majority vote of these chromosomes
-    chromo_len = len(chromosomes[1])
-    return "".join([majority(i) for i in range(chromo_len)])
+    chromo_len = len(parents[0])
+    return "".join([majority(i, parents) for i in range(chromo_len)])
 
-def crossover(parents):
-    # Take the first half of the first parent etc
-    father = parents[0]
-    mother = parents[1]
-    chromo_len = len(father)
-    return father[:chromo_len] + mother[chromo_len:]
 
+def fitness_weighted_crossover(parents):
+    chromo_len = len(parents[0])
+    return "".join([np.random.choice(parents, size=1, p=parent_weights)[i] for i in range(chromo_len)])
 
 def mutate(chromosome):
     pos = random.randint(0, len(chromosome[1]))
@@ -210,6 +231,9 @@ def mutate(chromosome):
     return chromosome[0:pos] + random.choice(avail) + chromosome[pos:]
 
 def evolve(population, retain_prob=0.20, select_prob=0.10, mutate_prob=0.85, sim_iters=25):
+
+    # SELECTION
+
     print("Evolve called on population of size %d" % len(population))
     fitness = evaluate_chromosomes(sim_iters, population)
     ranked_chromosomes = sorted(fitness, key=fitness.get, reverse=True)
@@ -253,8 +277,8 @@ def main():
 
     max_iters = 3
     simc_iters = 10
-
-    current_population = set([random_chromosome(TIER_THREE_TALENT) for _ in range(population_size)])
+    finish_on_five_cp = "0000000000000000000000000000000000000000000000000000000000000000000000000000000022222222222222222222222222222222"
+    current_population = [random_chromosome(TIER_THREE_TALENT) for _ in range(population_size)]
 
     iteration = 0
     while iteration < max_iters:
